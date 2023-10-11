@@ -202,3 +202,11 @@ let second_largest lst =
   let najvecji = largest lst in 
   let sez = remove najvecji lst in
   largest sez
+
+  (* let second_largest list =
+  let rec largest = function
+    | [] -> failwith "List is too short."
+	  | x :: [] -> x
+	  | x :: xs -> max x (largest xs)
+  in
+  largest (remove (largest list) list) *)
