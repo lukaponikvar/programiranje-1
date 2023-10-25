@@ -110,8 +110,7 @@ let zip lst1 lst2 =
 let rec zip' lst1 lst2 acc= 
 match (lst1, lst2) with
 |([],[]) -> acc
-|(_,[]) -> failwith "Different lengths of input lists."
-|([], _ ) -> failwith "Different lengths of input lists."
+|(_,[]) | ([], _ ) -> failwith "Different lengths of input lists."
 |(hd1 :: tl1, hd2 :: tl2) -> zip' tl1 tl2 ((hd1, hd2) :: acc) in
 reverse (zip' lst1 lst2 [])
 
@@ -164,19 +163,23 @@ let rec loop condition f x =
 [*----------------------------------------------------------------------------*)
 let fold_left_no_acc f lst = 
 let rec fold_left_no_acc f =  function
-|[] -> failwith "Prekratek seznam."
-|[_] -> failwith "Prekratek seznam."
+|[] | _ :: [] -> failwith "Prekratek seznam."
 |fst :: snd :: [] -> f snd fst
 |hd :: tl -> f (fold_left_no_acc f tl) hd in 
 fold_left_no_acc f  (reverse lst)
 
+(* let rec fold_left_no_acc f = function
+  | [] | _ :: [] -> failwith "List too short."
+  | x :: y :: [] -> f x y
+  | x :: y :: tl -> fold_left_no_acc f ((f x y) :: tl) *)
+
 let fold_left f = function
-| [] -> failwith "Prekratek seznam."
-|[_] -> failwith "Prekratek seznam."
-|x :: tl1 -> let rec fold_left' f acc = function
-|[] -> acc
-|hd :: tl -> fold_left' f (f acc hd) tl in 
-fold_left' f x tl1
+  | [] -> failwith "Prekratek seznam."
+  |[_] -> failwith "Prekratek seznam."
+  |x :: tl1 -> let rec fold_left' f acc = function
+    |[] -> acc
+    |hd :: tl -> fold_left' f (f acc hd) tl in 
+      fold_left' f x tl1
 
 (*----------------------------------------------------------------------------*]
  Funkcija [apply_sequence f x n] vrne seznam zaporednih uporab funkcije [f] na
