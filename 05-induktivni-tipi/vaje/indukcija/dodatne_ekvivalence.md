@@ -29,7 +29,7 @@ let rec elementi = function
 
 let elt' t =
   let rec aux acc = function 
-    | Prazno -> []
+    | Prazno -> acc
     | Sestavljeno (l, x, r) -> 
 	   aux (x::(aux acc r)) l
   in
