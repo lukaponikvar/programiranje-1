@@ -18,7 +18,6 @@ let read_line () =
   | x :: xs -> vhod := xs; print_endline x; x
 *)
 
-(* Ctrl F poišče kje smo!!! *)
 
 type stanje = {
   oznaka : string
@@ -28,20 +27,19 @@ type avtomat = {
   stanja : stanje list;
   zacetno_stanje : stanje;
   sprejemna_stanja : stanje list;
-  prehodi : (stanje * char * stanje) list
+  prehodi : (stanje * char * stanje) list;
 }
 
 let preberi_znak avt q chr =
-  let (_, _, q') = List.find (fun (q1, chr', q2) -> q1 = q && chr = chr') avt.prehodi in
+  let _, _, q' =
+    List.find (fun (q1, chr', q2) -> q1 = q && chr = chr') avt.prehodi
+  in
   q'
 
 (* String.fold_left je podprt samo od 4.13 naprej *)
 
-let s_fold_left f acc s = 
-  s |> String.to_seq |> Seq.fold_left f acc
-
-let preberi_niz avt q str =
-  s_fold_left (preberi_znak avt) q str
+let s_fold_left f acc s = s |> String.to_seq |> Seq.fold_left f acc
+let preberi_niz avt q str = s_fold_left (preberi_znak avt) q str
 
 let ali_sprejema_niz avt str =
   let koncno_stanje = preberi_niz avt avt.zacetno_stanje str in
@@ -56,14 +54,18 @@ type stanje_vmesnika =
 type model = {
   avtomat : avtomat;
   stanje_avtomata : stanje;
-  stanje_vmesnika : stanje_vmesnika
+  stanje_vmesnika : stanje_vmesnika;
 }
 
 type msg = PreberiNiz of string | ZamenjajVmesnik of stanje_vmesnika
 
-let update model =
-  function
-  | PreberiNiz str -> { model with stanje_avtomata = preberi_niz model.avtomat model.stanje_avtomata str; stanje_vmesnika = RezultatPrebranegaNiza}
+let update model = function
+  | PreberiNiz str ->
+      {
+        model with
+        stanje_avtomata = preberi_niz model.avtomat model.stanje_avtomata str;
+        stanje_vmesnika = RezultatPrebranegaNiza;
+      }
   | ZamenjajVmesnik stanje_vmesnika -> { model with stanje_vmesnika }
 
 let rec izpisi_moznosti () =
@@ -73,7 +75,9 @@ let rec izpisi_moznosti () =
   match read_line () with
   | "1" -> ZamenjajVmesnik IzpisAvtomata
   | "2" -> ZamenjajVmesnik BranjeNiza
-  | _ -> print_endline "** VNESI 1 ALI 2 **"; izpisi_moznosti ()
+  | _ ->
+      print_endline "** VNESI 1 ALI 2 **";
+      izpisi_moznosti ()
 
 let izpisi_avtomat avtomat =
   let izpisi_stanje stanje = 
@@ -83,9 +87,6 @@ let izpisi_avtomat avtomat =
     print_endline prikaz 
   in 
   print_endline "STANJA:";
-  List.iter izpisi_stanje avtomat.stanja
-
-  (* print_endline "STANJA:";
   print_endline "->(A)"; (* začetno stanje *)
   print_endline " ((B))"; (* stanje, ki je sprejemno *)
   print_endline "  (C)"; (* še eno stanje, ki ni sprejemno *)
@@ -107,17 +108,9 @@ let izpisi_rezultat model =
     print_endline "niz ni bil sprejet"
 
 let view (model: model) : msg =
-  match model.stanje_vmesnika with
-    | SeznamMoznosti -> izpisi_moznosti ()
-    | IzpisAvtomata -> izpisi_avtomat model.avtomat; ZamenjajVmesnik SeznamMoznosti
-    | BranjeNiza -> beri_niz model 
-    | RezultatPrebranegaNiza -> izpisi_rezultat model; ZamenjajVmesnik SeznamMoznosti
+  failwith "TODO"
 
-let init avtomat = {
-  avtomat;
-  stanje_avtomata = avtomat.zacetno_stanje;
-  stanje_vmesnika = SeznamMoznosti
-}
+let init avtomat = failwith "TODO"
 
 let rec main_loop model =
   let msg = view model in
@@ -125,19 +118,18 @@ let rec main_loop model =
   main_loop model'
 
 let vsebuje_samo_nicle =
-  let ima_enke = { oznaka = "ima 1" }
-  and nima_enk = { oznaka = "nima 1" }
-  in
+  let ima_enke = { oznaka = "ima 1" } and nima_enk = { oznaka = "nima 1" } in
   {
-  stanja = [ima_enke; nima_enk];
-  zacetno_stanje = nima_enk;
-  sprejemna_stanja = [nima_enk];
-  prehodi = [
-    (nima_enk, '0', nima_enk);
-    (nima_enk, '1', ima_enke);
-    (ima_enke, '0', ima_enke);
-    (ima_enke, '1', ima_enke);
-  ]
-}
+    stanja = [ ima_enke; nima_enk ];
+    zacetno_stanje = nima_enk;
+    sprejemna_stanja = [ nima_enk ];
+    prehodi =
+      [
+        (nima_enk, '0', nima_enk);
+        (nima_enk, '1', ima_enke);
+        (ima_enke, '0', ima_enke);
+        (ima_enke, '1', ima_enke);
+      ];
+  }
 
 let _ = main_loop (init vsebuje_samo_nicle) (*pozene main_loop ob zagonu*)
