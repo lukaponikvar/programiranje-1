@@ -11,12 +11,62 @@ from functools import cache
 # podzaporedje `[2, 3, 4, 4, 6, 7, 8, 9]`.
 # -----------------------------------------------------------------------------
 
+
+# def filtriraj(sez, n):
+#     sezz = ()
+#     for x in sez:
+#         if x >= n:
+#             sezz = sezz + (x,)
+#     return sezz
+
+# @cache 
+# def najdaljse_narascajoce_podazporedje(zaporedje):             LIS PROBLEM
+#     if zaporedje == ():
+#         return zaporedje 
+#     else:
+#         prvi = zaporedje[0]
+#         s_prvim = (prvi,) + najdaljse_narascajoce_podazporedje(filtriraj(zaporedje[1:], prvi))
+#         brez = najdaljse_narascajoce_podazporedje(zaporedje[1:])
+#         if len(s_prvim)>= len(brez):
+#             return s_prvim 
+#         else:
+#             return brez
+
+
 # -----------------------------------------------------------------------------
 # Rešitev sedaj popravite tako, da funkcija `vsa_najdaljsa` vrne seznam vseh
 # najdaljših naraščajočih podzaporedij.
 # -----------------------------------------------------------------------------
+def najdaljse_narascajoce_podazporedje(zaporedje):
+    @cache
+    def nnz(n, trenutni):
+        if n >= len(zaporedje):
+            return 0
+        elif zaporedje[n] < trenutni:
+            return nnz(n+1, trenutni)
+        else:
+            return max(1+ nnz(n+1, zaporedje[n]), nnz(n+1, trenutni))
+    return nnz(0, float("-inf"))
 
+print(najdaljse_narascajoce_podazporedje([2, 3, 6, 8, 4, 4, 6, 7, 12, 8, 9]))
 
+def najdaljse_narascajoce_podzaporedje(zaporedje):
+    @cache
+    def nnz(n, trenutni):
+        if n >= len(zaporedje):
+            return []
+        elif zaporedje[n] < trenutni:
+            return nnz(n+1, trenutni)
+        else:
+            prvi = [zaporedje[n]]+nnz(n+1, zaporedje[n])
+            drugi = nnz(n+1, trenutni)
+            if len(prvi)>=len(drugi):
+                return prvi
+            else:
+                return drugi
+    return nnz(0, float("-inf"))
+
+print(najdaljse_narascajoce_podzaporedje([2, 3, 6, 8, 4, 4, 6, 7, 12, 8, 9]))
 
 # =============================================================================
 # Žabica
@@ -42,8 +92,33 @@ from functools import cache
 # treh skokih, v močvari `[4, 1, 8, 2, 11, 1, 1, 1, 1, 1]` pa potrebuje zgolj
 # dva.
 # =============================================================================
+def zabica(mocvara):
+    n = len(mocvara)
+    @cache
+    def zab(i, ene):
+        if i >= n:
+            return 0
+        else:
+            seznam_vrednosti = []
+            for j in range(i+1, i+1+ene):
+                if j >= n:
+                    return 1
+                else:
+                    seznam_vrednosti.append(zab(j, ene-j+i+mocvara[j]))
+            return 1+ min(seznam_vrednosti)
+    return zab(0,mocvara[0])
 
+def zabica_(mocvara):
+    @cache
+    def zab_(i, ene):
+        if i >= len(mocvara):
+            return 0
+        else:
+            ene += mocvara[i]
+            return 1 + min(zab_(i+j, ene-j) for j in range(1, 1+ene))
+    return zab_(0,0)
 
+print(zabica([2, 4, 1, 2, 1, 3, 1, 1, 5]),zabica([4, 1, 8, 2, 11, 1, 1, 1, 1, 1]),zabica_([2, 4, 1, 2, 1, 3, 1, 1, 5]),zabica_([4, 1, 8, 2, 11, 1, 1, 1, 1, 1]))
 
 # =============================================================================
 # Nageljni
@@ -65,8 +140,24 @@ from functools import cache
 #     [1, 1, 0, 0, 1, 1, 0, 1, 1]
 #     [0, 1, 1, 0, 1, 1, 0, 1, 1]
 # =============================================================================
+@cache
+def postavitve(sirina, stevilo, korito):
+    if sirina <  stevilo * korito + stevilo-1 or sirina<0:
+        return []
+    elif stevilo==0:
+        return [[0]*sirina]
+    else: 
+        seznam = []
+        if sirina==korito:
+            seznam.append([1]*sirina)
+        for postavitev in postavitve(sirina-1, stevilo, korito):
+            seznam.append([0]+postavitev)
+        for postavitevv in postavitve(sirina-1-korito, stevilo-1, korito):
+            seznam.append([1]*korito+[0]+postavitevv)
+        return seznam
 
-
+for x in postavitve(9,3,2):
+    print(x)
 
 # =============================================================================
 # Pobeg iz Finske
@@ -110,8 +201,30 @@ from functools import cache
 # zapil). Funkcija `pobeg` sprejme seznam, ki predstavlja finska mesta in vrne
 # seznam indeksov mest, v katerih se Mortimer ustavi.
 # =============================================================================
+def pobeg(mozne_poti):
+    @cache
+    def potuj(indeks, denar):
+        vse = len(mozne_poti)
+        if indeks >= vse:
+            if denar >= 0:
+                return [vse]
+            else:
+                return []
+        else:
+            poti = mozne_poti[indeks]
+            koncne = []
+            for pot in poti:
+                sez = potuj(pot[0],denar+pot[1])
+                if sez:
+                    koncne.append([indeks] + sez)
+            if koncne:
+                return min(koncne, key=len)
+            else:
+                return []
+    return potuj(0,0)
 
 
+print(pobeg([[(1, 10), (3, -10)], [(2, 10), (5, -20)], [(3, -10)], [(4, 15)], [(5, 0)]]))
 
 # =============================================================================
 # Pričetek robotske vstaje
@@ -148,3 +261,22 @@ from functools import cache
 # 
 # medtem ko iz vrste 5 in stolpca 0 ne more pobegniti.
 # =============================================================================
+def pot_pobega(soba, vrsta, stolpec, koraki):
+    @cache
+    def pobegni(row, column, steps):
+        if steps == 0 and soba[row][column] == 1:
+            return ["bravo"]
+        elif steps == 0 or soba[row][column] != 0:
+            return []
+        else:
+            if row != 0 and pobegni(row-1, column, steps-1):
+                return ["gor"] + pobegni(row-1, column, steps-1)
+            if column != 0 and pobegni(row, column-1, steps-1):
+                return ["levo"] + pobegni(row, column-1, steps-1)
+            if row != len(soba)-1 and pobegni(row+1, column, steps-1):
+                return ["dol"] + pobegni(row+1, column, steps-1)
+            if column != len(soba[0])-1 and pobegni(row, column+1, steps-1):
+                return ["desno"] + pobegni(row, column+1, steps-1)
+    return pobegni(vrsta, stolpec, koraki)[:-1]
+
+print(pot_pobega([[0, 1, 0, 0, 2],[0, 2, 2, 0, 0],[0, 0, 2, 2, 0],[2, 0, 0, 2, 0],[0, 2, 2, 0, 0],[0, 0, 0, 2, 2]], 3, 1, 5))

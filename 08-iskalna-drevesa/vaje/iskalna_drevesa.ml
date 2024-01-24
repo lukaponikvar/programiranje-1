@@ -5,7 +5,9 @@
  bodisi prazna, bodisi pa vsebujejo podatek in imajo dve (morda prazni)
  poddrevesi. Na tej točki ne predpostavljamo ničesar drugega o obliki dreves.
 [*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*)
-
+type 'a iskalno_drevo = 
+     | Prazno 
+     | Sestavljeno of 'a iskalno_drevo * 'a * 'a iskalno_drevo
 
 (*----------------------------------------------------------------------------*]
  Definirajmo si testni primer za preizkušanje funkcij v nadaljevanju. Testni
@@ -18,6 +20,9 @@
       0   6   11
 [*----------------------------------------------------------------------------*)
 
+let leaf x = Sestavljeno (Prazno, x, Prazno) 
+
+let test_tree = Sestavljeno (Sestavljeno (leaf 0, 2, Prazno),5, Sestavljeno (leaf 6,7, leaf 11))
 
 (*----------------------------------------------------------------------------*]
  Funkcija [mirror] vrne prezrcaljeno drevo. Na primeru [test_tree] torej vrne
@@ -32,7 +37,9 @@
  Node (Node (Node (Empty, 11, Empty), 7, Node (Empty, 6, Empty)), 5,
  Node (Empty, 2, Node (Empty, 0, Empty)))
 [*----------------------------------------------------------------------------*)
-
+let rec mirror = function
+     | Prazno -> Prazno
+     | Sestavljeno (levo, x, desno) -> Sestavljeno (mirror desno,x, mirror levo)
 
 (*----------------------------------------------------------------------------*]
  Funkcija [height] vrne višino oz. globino drevesa, funkcija [size] pa število
@@ -43,6 +50,9 @@
  # size test_tree;;
  - : int = 6
 [*----------------------------------------------------------------------------*)
+let rec height = function
+     | Prazno -> 0
+     | Sestavljeno (levo, _, desno) -> 1 + max (height levo) (height desno)
 
 
 (*----------------------------------------------------------------------------*]
@@ -54,7 +64,9 @@
  Node (Node (Node (Empty, false, Empty), false, Empty), true,
  Node (Node (Empty, true, Empty), true, Node (Empty, true, Empty)))
 [*----------------------------------------------------------------------------*)
-
+let rec map_tree f = function
+     | Prazno -> Prazno
+     | Sestavljeno (levo, x, desno) -> Sestavljeno (map_tree f levo, f x, map_tree f desno)
 
 (*----------------------------------------------------------------------------*]
  Funkcija [list_of_tree] pretvori drevo v seznam. Vrstni red podatkov v seznamu
@@ -63,7 +75,9 @@
  # list_of_tree test_tree;;
  - : int list = [0; 2; 5; 6; 7; 11]
 [*----------------------------------------------------------------------------*)
-
+let rec list_of_tree = function
+     | Prazno -> []
+     | Sestavljeno (levo, x, desno) -> (list_of_tree levo) @ [x] @ (list_of_tree desno)
 
 (*----------------------------------------------------------------------------*]
  Funkcija [is_bst] preveri ali je drevo binarno iskalno drevo (Binary Search 
@@ -75,7 +89,13 @@
  # test_tree |> mirror |> is_bst;;
  - : bool = false
 [*----------------------------------------------------------------------------*)
-
+let rec is_bst drevo = 
+  let seznam = list_of_tree drevo in 
+    let rec seznam_narasca = function 
+      | [] | [_] -> true
+      | x :: y :: xs -> x < y && seznam_narasca (y :: xs) 
+    in
+  seznam_narasca seznam 
 
 (*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*]
  V nadaljevanju predpostavljamo, da imajo dvojiška drevesa strukturo BST.
@@ -90,15 +110,26 @@
  # member 3 test_tree;;
  - : bool = false
 [*----------------------------------------------------------------------------*)
+let rec insert x = function
+  | Prazno -> leaf x
+  | Sestavljeno (levo, y, desno) when x < y -> Sestavljeno (insert x levo, y, levo)
+  | Sestavljeno (levo, y, desno) when x = y -> Sestavljeno (levo, y, desno)
+  | Sestavljeno (levo, y, desno) -> Sestavljeno (levo, y, insert x desno)
 
-
+let rec member x = function
+  | Prazno -> false
+  | Sestavljeno (_, y, _) when y = x -> true
+  | Sestavljeno (levo, y, _) when x < y -> member x levo
+  | Sestavljeno (_, _, desno) -> member x desno
 (*----------------------------------------------------------------------------*]
  Funkcija [member2] ne privzame, da je drevo bst.
  
  Opomba: Premislte kolikšna je časovna zahtevnost funkcije [member] in kolikšna
  funkcije [member2] na drevesu z n vozlišči, ki ima globino log(n). 
 [*----------------------------------------------------------------------------*)
-
+let rec member2 x = function
+  | Prazno -> false
+  | Sestavljeno (levo, y, desno) -> member2 x levo || x = y || member2 x desno
 
 (*----------------------------------------------------------------------------*]
  Funkcija [succ] vrne naslednjika korena danega drevesa, če obstaja. Za drevo
@@ -112,8 +143,25 @@
  # pred (Node(Empty, 5, leaf 7));;
  - : int option = None
 [*----------------------------------------------------------------------------*)
+let succ drevo = 
+  let rec najmanjsi = function
+    | Prazno -> None 
+    | Sestavljeno (levo, y, _) when levo != Prazno -> najmanjsi levo
+    | Sestavljeno (_, y, _) -> Some y
+  in
+  match drevo with
+    | Prazno -> None
+    | Sestavljeno (_, _, desno) -> najmanjsi desno
 
-
+let pred drevo = 
+ let rec najvecji = function
+   | Prazno -> None
+   | Sestavljeno (_, y, desno) when desno != Prazno -> najvecji desno
+   | Sestavljeno (_, y, _) -> Some y
+ in
+ match drevo with
+   | Prazno -> None
+   | Sestavljeno (levo, _, _) -> najvecji levo
 (*----------------------------------------------------------------------------*]
  Na predavanjih ste omenili dva načina brisanja elementov iz drevesa. Prvi 
  uporablja [succ], drugi pa [pred]. Funkcija [delete x bst] iz drevesa [bst] 
@@ -126,7 +174,17 @@
  Node (Node (Node (Empty, 0, Empty), 2, Empty), 5,
  Node (Node (Empty, 6, Empty), 11, Empty))
 [*----------------------------------------------------------------------------*)
+let rec najmanjsi = function
+    | Prazno -> 0
+    | Sestavljeno (levo, y, _) when levo != Prazno -> najmanjsi levo
+    | Sestavljeno (_, y, _) -> y
 
+let rec delete_succ x = function
+  | Prazno -> Prazno
+  | Sestavljeno (Prazno, y, desno) when y = x -> desno
+  | Sestavljeno (levo, y, desno) when x < y -> Sestavljeno (delete_succ x levo, y, desno)
+  | Sestavljeno (levo, y, desno) when x > y -> Sestavljeno (levo, y, delete_succ x desno)
+  | Sestavljeno (levo, x, desno) -> Sestavljeno (delete_succ (najmanjsi levo) levo, najmanjsi levo, desno)
 
 (*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*]
  SLOVARJI
@@ -138,9 +196,15 @@
  strukturo glede na ključe. Ker slovar potrebuje parameter za tip ključa in tip
  vrednosti, ga parametriziramo kot [('key, 'value) dict].
 [*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*)
+(* type ('key, 'value) dict =
+  | Empty
+  | Node of ('key, 'value) dict * ('key * 'value) * ('key, 'value) dict *)
 
+  type ('key, 'value) dict = ('key * 'value) iskalno_drevo
+  
+  let leaf x = Sestavljeno (Prazno, x, Prazno)
 
-(*----------------------------------------------------------------------------*]
+  (*----------------------------------------------------------------------------*]
  Napišite testni primer [test_dict]:
       "b":1
       /    \
@@ -149,6 +213,7 @@
      "c":-2
 [*----------------------------------------------------------------------------*)
 
+let test_dict = Sestavljeno (leaf ("a", 0), ("b", 1), Sestavljeno(leaf ("c", -2), ("d", 2), Prazno))
 
 (*----------------------------------------------------------------------------*]
  Funkcija [dict_get key dict] v slovarju poišče vrednost z ključem [key]. Ker
@@ -159,7 +224,10 @@
  # dict_get "c" test_dict;;
  - : int option = Some (-2)
 [*----------------------------------------------------------------------------*)
-
+let rec dict_get key = function
+  | Prazno -> None
+  | Sestavljeno (levo, (x, y), desno) when x = key -> Some y
+  | Sestavljeno (l,_,d) -> let dict_get key l = vrednost in if vrednost = None then dict_get key l else vrednost
       
 (*----------------------------------------------------------------------------*]
  Funkcija [print_dict] sprejme slovar s ključi tipa [string] in vrednostmi tipa
@@ -196,4 +264,3 @@
  d : 2
  - : unit = ()
 [*----------------------------------------------------------------------------*)
-

@@ -3,12 +3,12 @@
 (*----------------------------------------------------------------------------*]
  Definirajte pomožno funkcijo za obračanje seznamov.
 [*----------------------------------------------------------------------------*)
-let reverse lst = 
+let reverse = 
 let rec reverse' acc lst = 
   match lst with
 |[] -> acc
 |x :: tl -> reverse' (x ::acc) tl
-in reverse' [] lst
+in reverse' [] 
 
 (*----------------------------------------------------------------------------*]
  Funkcija [repeat x n] vrne seznam [n] ponovitev vrednosti [x]. Za neprimerne
@@ -173,7 +173,7 @@ fold_left_no_acc f  (reverse lst)
   | x :: y :: [] -> f x y
   | x :: y :: tl -> fold_left_no_acc f ((f x y) :: tl) *)
 
-let fold_left f = function
+let fold_leftt f = function
   | [] -> failwith "Prekratek seznam."
   |[_] -> failwith "Prekratek seznam."
   |x :: tl1 -> let rec fold_left' f acc = function

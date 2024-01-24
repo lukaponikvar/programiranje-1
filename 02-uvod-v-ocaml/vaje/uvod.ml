@@ -137,7 +137,7 @@ let rec divide k lst =match (k, lst) with
 let rec rotate n lst = match (n, lst) with
 |(_, []) -> []
 |(0, lst) -> lst
-|(n, x:: rep) -> (rotate (n-1) rep) @ [x]
+|(n, x:: rep) -> (rotate (n-1) (rep @ [x]))
 (*----------------------------------------------------------------------------*]
  Funkcija [remove x list] iz seznama izbriše vse pojavitve elementa [x].
  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
