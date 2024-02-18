@@ -1,6 +1,9 @@
 type 'a list_tree = Leaf of 'a | Node of 'a list_tree list
 
 (* 1. a) *)
+let rec map f = function
+  | Leaf x -> Leaf (f x)
+  | Node y -> Node y
 
 (* 1. b) *)
 
